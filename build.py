@@ -2,7 +2,7 @@
 
 import subprocess
 
-def run_pipreqs(target_dir=".", force=True, savepath=None, ignore=None, encoding=None):
+def run_pipreqs(target_dir=".", force=True, savepath=None, ignore=".venv/, venv/", encoding='utf-8'):
     command = ["pipreqs", target_dir]
     if force:
         command.append("--force")
