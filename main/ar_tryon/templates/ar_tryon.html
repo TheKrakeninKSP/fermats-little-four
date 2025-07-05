@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Try-On</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ar-container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .ar-header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .ar-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .ar-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .ar-camera {
+            position: relative;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            aspect-ratio: 9/16;
+        }
+
+        #cameraFeed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .ar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .ar-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .product-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .product-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .size-selector {
+            margin: 15px 0;
+        }
+
+        .size-selector label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .size-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .size-btn {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .size-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .size-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .ar-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .feedback-section {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .star {
+            font-size: 1.5em;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .star.active {
+            color: #ffc107;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .status-connecting {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .status-active {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .measurements-form {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .measurements-form input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .ar-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .ar-header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ar-container">
+        <div class="ar-header">
+            <h1>🦄 AR Try-On Experience</h1>
+            <p>Try on clothes virtually with cutting-edge AR technology</p>
+        </div>
+
+        <div class="ar-content">
+            <div class="ar-camera">
+                <video id="cameraFeed" autoplay playsinline></video>
+                <canvas id="arOverlay" class="ar-overlay"></canvas>
+                <div id="statusIndicator" class="status-indicator status-connecting">
+                    Connecting...
+                </div>
+                <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <span>Loading AR Model...</span>
+                </div>
+            </div>
+
+            <div class="ar-controls">
+                <div class="product-info">
+                    <h3 id="productName">Premium Cotton T-Shirt</h3>
+                    <p id="productDescription">Comfortable everyday wear with perfect fit</p>
+                    <p><strong>Price: $<span id="productPrice">29.99</span></strong></p>
+                </div>
+
+                <div class="size-selector">
+                    <label>Select Size:</label>
+                    <div class="size-buttons">
+                        <button class="size-btn" data-size="XS">XS</button>
+                        <button class="size-btn active" data-size="S">S</button>
+                        <button class="size-btn" data-size="M">M</button>
+                        <button class="size-btn" data-size="L">L</button>
+                        <button class="size-btn" data-size="XL">XL</button>
+                    </div>
+                </div>
+
+                <div class="measurements-form">
+                    <h4>Your Measurements (Optional)</h4>
+                    <input type="number" id="height" placeholder="Height (cm)">
+                    <input type="number" id="chest" placeholder="Chest (cm)">
+                    <input type="number" id="waist" placeholder="Waist (cm)">
+                    <button class="btn btn-secondary" onclick="saveMeasurements()">Save Measurements</button>
+                </div>
+
+                <div class="ar-actions">
+                    <button class="btn btn-primary" onclick="startARSession()">Start AR Try-On</button>
+                    <button class="btn btn-secondary" onclick="captureScreenshot()">Take Photo</button>
+                    <button class="btn btn-success" onclick="addToCart()">Add to Cart</button>
+                </div>
+
+                <div class="feedback-section">
+                    <h4>How does it fit?</h4>
+                    <div class="rating-stars">
+                        <span class="star" data-rating="1">★</span>
+                        <span class="star" data-rating="2">★</span>
+                        <span class="star" data-rating="3">★</span>
+                        <span class="star" data-rating="4">★</span>
+                        <span class="star" data-rating="5">★</span>
+                    </div>
+                    <textarea id="feedback" placeholder="Tell us about the fit..." rows="3" style="width: 100%; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+                    <button class="btn btn-primary" onclick="submitFeedback()" style="margin-top: 10px;">Submit Feedback</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.AR_MODEL_UUID = "{{ ar_model.id }}";
+        class ARTryOnApp {
+            constructor() {
+                this.currentSession = null;
+                this.selectedSize = 'M';
+                this.rating = 0;
+                this.camera = null;
+                this.arActive = false;
+                this.productId = 1; // This would come from your product page
+                
+                this.initializeApp();
+            }
+
+            async initializeApp() {
+                await this.initializeCamera();
+                this.setupEventListeners();
+                this.updateStatus('active', 'Camera Ready');
+            }
+
+            async initializeCamera() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: 'user',
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
+                        }
+                    });
+                    
+                    const video = document.getElementById('cameraFeed');
+                    video.srcObject = stream;
+                    this.camera = stream;
+                    
+                    video.addEventListener('loadedmetadata', () => {
+                        this.setupARCanvas();
+                    });
+                    
+                } catch (error) {
+                    console.error('Camera access denied:', error);
+                    this.updateStatus('error', 'Camera Access Denied');
+                }
+            }
+
+            setupARCanvas() {
+                const canvas = document.getElementById('arOverlay');
+                const video = document.getElementById('cameraFeed');
+                
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                
+                // Start AR rendering loop
+                this.startARLoop();
+            }
+
+            startARLoop() {
+                const canvas = document.getElementById('arOverlay');
+                const ctx = canvas.getContext('2d');
+                
+                const renderFrame = () => {
+                    if (this.arActive) {
+                        this.renderAROverlay(ctx);
+                    }
+                    requestAnimationFrame(renderFrame);
+                };
+                
+                renderFrame();
+            }
+
+            renderAROverlay(ctx) {
+                // Clear canvas
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                
+                if (!this.arActive) return;
+                
+                // Simulate AR clothing overlay
+                ctx.save();
+                
+                // Draw clothing outline (simplified)
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                
+                // Simulate shirt outline
+                const centerX = ctx.canvas.width / 2;
+                const centerY = ctx.canvas.height / 2;
+                
+                ctx.beginPath();
+                ctx.rect(centerX - 80, centerY - 60, 160, 120);
+                ctx.stroke();
+                
+                // Add size indicator
+                ctx.fillStyle = '#00ff00';
+                ctx.font = '16px Arial';
+                ctx.fillText(`Size: ${this.selectedSize}`, centerX - 30, centerY - 70);
+                
+                // Add fit indicator
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+                ctx.fillRect(centerX - 80, centerY - 60, 160, 120);
+                
+                ctx.restore();
+            }
+
+            setupEventListeners() {
+                // Size selection
+                document.querySelectorAll('.size-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.selectedSize = e.target.dataset.size;
+                        console.log('Size selected:', this.selectedSize);
+                    });
+                });
+
+                // Rating stars
+                document.querySelectorAll('.star').forEach(star => {
+                    star.addEventListener('click', (e) => {
+                        this.rating = parseInt(e.target.dataset.rating);
+                        this.updateStars();
+                    });
+                });
+            }
+
+            updateStars() {
+                document.querySelectorAll('.star').forEach((star, index) => {
+                    if (index < this.rating) {
+                        star.classList.add('active');
+                    } else {
+                        star.classList.remove('active');
+                    }
+                });
+            }
+
+            updateStatus(type, message) {
+                const indicator = document.getElementById('statusIndicator');
+                indicator.className = `status-indicator status-${type}`;
+                indicator.textContent = message;
+            }
+
+            showLoading(show = true) {
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.style.display = show ? 'flex' : 'none';
+            }
+
+            async startARSession() {
+                try {
+                    this.showLoading(true);
+                    this.updateStatus('connecting', 'Starting AR Session...');
+                    
+                    // Call Django API to start session
+                    const response = await fetch(`/api/ar-tryon/${window.AR_MODEL_UUID}/start_session/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCSRFToken()
+                        },
+                        body: JSON.stringify({
+                            product_id: this.productId,
+                            size: this.selectedSize
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to start AR session');
+                    }
+                    
+                    const data = await response.json();
+                    this.currentSession = data.session_id;
+                    this.arActive = true;
+                    
+                    this.updateStatus('active', 'AR Active');
+                    this.showLoading(false);
+                    
+                    // Update UI with recommendations
+                    if (data.sizing_recommendations) {
+                        this.showSizingRecommendations(data.sizing_recommendations);
+                    }
+                    
+                } catch (error) {
+                    console.error('AR session error:', error);
+                    this.updateStatus('error', 'AR Session Failed');
+                    this.showLoading(false);
+                }
+            }
+
+            showSizingRecommendations(recommendations) {
+                const suggestedSize = recommendations.suggested_size;
+                const confidence = recommendations.confidence;
+                
+                // Highlight recommended size
+                document.querySelectorAll('.size-btn').forEach(btn => {
+                    btn.classList.remove('recommended');
+                    if (btn.dataset.size === suggestedSize) {
+                        btn.style.border = '2px solid #28a745';
+                        btn.style.backgroundColor = '#d4edda';
+                        btn.title = `Recommended (${Math.round(confidence * 100)}% confidence)`;
+                    }
+                });
+                
+                // Show recommendation message
+                const recommendationDiv = document.createElement('div');
+                recommendationDiv.className = 'recommendation-message';
+                recommendationDiv.innerHTML = `
+                    <p><strong>💡 Size Recommendation:</strong> ${suggestedSize}</p>
+                    <p>Confidence: ${Math.round(confidence * 100)}%</p>
+                `;
+                recommendationDiv.style.cssText = `
+                    background: #d4edda;
+                    padding: 10px;
+                    border-radius: 5px;
+                    margin: 10px 0;
+                    border-left: 4px solid #28a745;
+                `;
+                
+                const sizeSelector = document.querySelector('.size-selector');
+                sizeSelector.appendChild(recommendationDiv);
+            }
+
+            async captureScreenshot() {
+                if (!this.arActive) {
+                    alert('Please start AR session first');
+                    return;
+                }
+                
+                try {
+                    const canvas = document.createElement('canvas');
+                    const video = document.getElementById('cameraFeed');
+                    const overlay = document.getElementById('arOverlay');
+                    
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Draw video frame
+                    ctx.drawImage(video, 0, 0);
+                    
+                    // Draw AR overlay
+                    ctx.drawImage(overlay, 0, 0);
+                    
+                    // Convert to blob and upload
+                    canvas.toBlob(async (blob) => {
+                        const formData = new FormData();
+                        formData.append('screenshot', blob, 'ar-screenshot.png');
+                        formData.append('session_id', this.currentSession);
+                        
+                        const response = await fetch('/api/ar-tryon/update_session/', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': this.getCSRFToken()
+                            },
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            this.showNotification('Screenshot captured!', 'success');
+                        }
+                    }, 'image/png');
+                    
+                } catch (error) {
+                    console.error('Screenshot error:', error);
+                    this.showNotification('Screenshot failed', 'error');
+                }
+            }
+
+            async saveMeasurements() {
+                const measurements = {
+                    height: document.getElementById('height').value,
+                    chest: document.getElementById('chest').value,
+                    waist: document.getElementById('waist').value
+                };
+                
+                try {
+                    const response = await fetch('/api/measurements/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCSRFToken()
+                        },
+                        body: JSON.stringify(measurements)
+                    });
+                    
+                    if (response.ok) {
+                        this.showNotification('Measurements saved!', 'success');
+                    }
+                } catch (error) {
+                    console.error('Save measurements error:', error);
+                    this.showNotification('Failed to save measurements', 'error');
+                }
+            }
+
+            async submitFeedback() {
+                if (!this.currentSession) {
+                    alert('Please start AR session first');
+                    return;
+                }
+                
+                const feedback = document.getElementById('feedback').value;
+                
+                try {
+                    const response = await fetch('/api/ar-tryon/end_session/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCSRFToken()
+                        },
+                        body: JSON.stringify({
+                            session_id: this.currentSession,
+                            fit_rating: this.rating,
+                            feedback: feedback,
+                            size: this.selectedSize
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.showResults(data.result);
+                        this.showNotification('Feedback submitted!', 'success');
+                    }
+                } catch (error) {
+                    console.error('Feedback submission error:', error);
+                    this.showNotification('Failed to submit feedback', 'error');
+                }
+            }
+
+            showResults(result) {
+                const resultsHtml = `
+                    <div class="results-panel" style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 20px;">
+                        <h4>🎯 Try-On Results</h4>
+                        <p><strong>Fit Score:</strong> ${result.fit_score}/100</p>
+                        <p><strong>Recommended Size:</strong> ${result.size_recommendation}</p>
+                        ${result.fit_issues && result.fit_issues.length > 0 ? 
+                            `<p><strong>Fit Issues:</strong> ${result.fit_issues.join(', ')}</p>` : ''}
+                        <p><strong>Color Match:</strong> ${result.color_match_score || 'N/A'}</p>
+                    </div>
+                `;
+                
+                const controlsDiv = document.querySelector('.ar-controls');
+                controlsDiv.insertAdjacentHTML('beforeend', resultsHtml);
+            }
+
+            async addToCart() {
+                if (!this.arActive) {
+                    alert('Please try the item first using AR!');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/cart/add/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCSRFToken()
+                        },
+                        body: JSON.stringify({
+                            product_id: this.productId,
+                            size: this.selectedSize,
+                            ar_session_id: this.currentSession
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        this.showNotification('Added to cart!', 'success');
+                    }
+                } catch (error) {
+                    console.error('Add to cart error:', error);
+                    this.showNotification('Failed to add to cart', 'error');
+                }
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.textContent = message;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 5px;
+                    color: white;
+                    font-weight: bold;
+                    z-index: 1000;
+                    opacity: 0;
+                    transform: translateX(100%);
+                    transition: all 0.3s ease;
+                    ${type === 'success' ? 'background: #28a745;' : ''}
+                    ${type === 'error' ? 'background: #dc3545;' : ''}
+                    ${type === 'info' ? 'background: #17a2b8;' : ''}
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => {
+                    notification.style.opacity = '1';
+                    notification.style.transform = 'translateX(0)';
+                }, 100);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            getCSRFToken() {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'csrftoken') {
+                        return value;
+                    }
+                }
+                return '';
+            }
+        }
+
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.arApp = new ARTryOnApp();
+        });
+
+        // Global functions for button clicks
+        function startARSession() {
+            window.arApp.startARSession();
+        }
+
+        function captureScreenshot() {
+            window.arApp.captureScreenshot();
+        }
+
+        function saveMeasurements() {
+            window.arApp.saveMeasurements();
+        }
+
+        function submitFeedback() {
+            window.arApp.submitFeedback();
+        }
+
+        function addToCart() {
+            window.arApp.addToCart();
+        }
+    </script>
+</body>
+</html>
