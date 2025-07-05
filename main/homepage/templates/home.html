@@ -55,14 +55,16 @@
         </div>
         <div class="category-grid">
             {% for category in categories %}
-            <div class="category-card">
-                <a href="#">
-                    <div class="image-container">
-                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                {% if category.slug %}
+                    <div class="category-card">
+                        <a href="{% url 'category_detail' category.slug %}">
+                            <div class="image-container">
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                            </div>
+                            <p>{{ category.name }}</p>
+                        </a>
                     </div>
-                    <p>{{ category.name }}</p>
-                </a>
-            </div>
+                {% endif %}
             {% endfor %}
         </div>
     </main>
