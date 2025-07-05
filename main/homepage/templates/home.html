@@ -1,0 +1,70 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walmart Clone</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <!--
+            <div class="logo-container">
+                <img src="https://i.imgur.com/G4l4s6K.png" alt="Walmart Logo" class="logo">
+            </div>
+            -->
+            <div class="location-picker">
+                <i class="fa-solid fa-location-dot"></i>
+                <div>
+                    <span class="pickup-text">Pickup or delivery?</span>
+                    <span class="location-text">Sacramento, 95829 • Sacramento Supe...</span>
+                </div>
+            </div>
+            <div class="search-container">
+                <input type="text" placeholder="Search everything at Walmart online and in store">
+                <button class="search-button"><i class="fa-solid fa-search"></i></button>
+            </div>
+            <div class="nav-icons">
+                <div class="icon-item">
+                    <i class="fa-solid fa-repeat"></i>
+                    <span>Reorder</span>
+                </div>
+                <div class="icon-item">
+                    <i class="fa-regular fa-heart"></i>
+                    <span>My Items</span>
+                </div>
+                <div class="icon-item">
+                    <i class="fa-regular fa-user"></i>
+                    <span>Sign In & Account</span>
+                </div>
+                <div class="icon-item cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span>$0.00</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="category-header">
+            <h2>Shop by category</h2>
+            <a href="#">Save sets</a>
+        </div>
+        <div class="category-grid">
+            {% for category in categories %}
+            <div class="category-card">
+                <a href="#">
+                    <div class="image-container">
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                    </div>
+                    <p>{{ category.name }}</p>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>
