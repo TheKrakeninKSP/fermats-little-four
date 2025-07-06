@@ -30,3 +30,17 @@ __pypackages__/
 env/
 venv/
 .vscode/
+
+#media profile specific
+main/media/tryon_results/
+main/media/user_bodies/
+
+#media junk
+main/media/categories/Screenshot_2025-07-05_at_1_CYBfl14.57.09PM.png
+main/media/categories/Screenshot_2025-07-05_at_1_CYBfl14_YuHI63c.57.09PM.png
+main/media/categories/Screenshot_2025-07-05_at_1_CYBfl14_YuHI63c_7LCxVCm.57.09PM.png
+main/media/categories/Screenshot_2025-07-05_at_1_ErSpIsO.55.01PM.png
+main/media/categories/Screenshot_2025-07-05_at_1_IZ5VTSM.58.12PM.png
+main/media/categories/Screenshot_2025-07-05_at_1_mKJLIyy.57.35PM.png
+main/media/categories/Screenshot_2025-07-05_at_1_spkXUgr.56.31PM.png
+main/media/categories/Screenshot_2025-07-05_at_1_wDXH0NV.55.57PM.png
