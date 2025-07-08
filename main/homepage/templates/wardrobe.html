@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Wardrobe</title>
+</head>
+<body>
+    <h2>Your Wardrobe</h2>
+    {% if result_url %}
+    <div class="tryon-result">
+        <h3>Try-On Result for "{{ tried_on }}"</h3>
+        <img src="{{ result_url }}?t={{ timestamp|default:0 }}" width="300">
+    </div>
+    {% endif %}
+
+    <ul>
+        {% for item in wardrobe_items %}
+            <li>
+                <img src="{{ item.category.image.url }}" width="50">
+                {{ item.category.name }}
+            </li>
+            <form method="POST" action="{% url 'try_on' item.category.id %}">
+                {% csrf_token %}
+                <button type="submit">Try On</button>
+            </form>
+            <form method="POST" action="{% url 'remove_from_wardrobe' item.category.id %}">
+                {% csrf_token %}
+                <button type="submit" style="color: red;">Remove</button>
+            </form>
+
+        {% empty %}
+            <li>No items yet.</li>
+        {% endfor %}
+    </ul>
+    
+<div class="user-avatar">
+    {% if request.user.profile.full_body_image %}
+        <img src="{{ request.user.profile.full_body_image.url }}?{{ request.user.profile.full_body_image.size }}" width="200">
+    {% else %}
+        <p>No body image uploaded.</p>
+    {% endif %}
+</div>
+
+<form method="POST" action="{%url 'wardrobe' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.full_body_image.label_tag }} {{ form.full_body_image }}
+    <button type="submit">Upload Photo</button>
+</form>
+</body>
+</html>

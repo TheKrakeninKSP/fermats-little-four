@@ -89,6 +89,10 @@ header {
     margin-bottom: 0.2rem;
 }
 
+a.icon-item {
+    text-decoration: none;
+}
+
 .cart {
     background-color: #004f9a;
     padding: 0.5rem 1rem;
