@@ -89,7 +89,7 @@ def try_on(request, category_id):
     cloth_io = resize_image_to_512(cloth_path)
 
     headers = {
-        "x-rapidapi-key": "API_KEY",
+        "x-rapidapi-key": "91de88b5a5msh84a5edba908ba7bp14306djsnddd6c65aa846",
         "x-rapidapi-host": "try-on-diffusion.p.rapidapi.com"
     }
 
