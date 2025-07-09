@@ -1,0 +1,26 @@
+<header>
+    <div class="header-container">
+        <div class="location-picker">
+            <i class="fa-solid fa-location-dot"></i>
+            <div>
+                <span class="pickup-text">Pickup or delivery?</span>
+                <span class="location-text">Sacramento, 95829 • Sacramento Supe...</span>
+            </div>
+        </div>
+        <div class="search-container">
+            <input type="text" placeholder="Search everything at Walmart online and in store">
+            <button class="search-button"><i class="fa-solid fa-search"></i></button>
+        </div>
+        <div class="nav-icons">
+            <div class="icon-item"><i class="fa-solid fa-repeat"></i><span>Reorder</span></div>
+            <div class="icon-item"><i class="fa-regular fa-heart"></i><span>My Items</span></div>
+            <div class="icon-item"><i class="fa-regular fa-user"></i><span>{{ request.user.username }}</span></div>
+            <a href="{% url 'wardrobe' %}" class="icon-item wardrobe">
+                <i class="fa-solid fa-shirt"></i><span>Wardrobe</span>
+            </a>
+            <div class="icon-item cart">
+                <i class="fa-solid fa-cart-shopping"></i><span>$0.00</span>
+            </div>
+        </div>
+    </div>
+</header>
