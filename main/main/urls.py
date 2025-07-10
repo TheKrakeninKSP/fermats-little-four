@@ -25,12 +25,13 @@ from rest_framework import permissions
 from ar_tryon.views import ar_tryon_page
 from django.contrib.auth import views as auth_views
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
-    
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+  
     path('', include('homepage.urls')),
     path('tryon/', ar_tryon_page, name='ar-tryon-page'),
     path('', include('ar_tryon.urls')),

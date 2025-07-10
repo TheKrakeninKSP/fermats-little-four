@@ -1,0 +1,246 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Wardrobe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+    .main-wrapper {
+        display: grid;
+        grid-template-columns: 2fr 1.5fr;
+        gap: 2rem;
+        padding: 2rem;
+        max-width: 1300px;
+        margin: auto;
+    }
+
+    .wardrobe-left {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .wardrobe-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.2rem;
+    }
+
+    .upload-photo {
+        margin-top: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+
+    .category-card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        text-align: center;
+        transition: box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 360px;
+        padding: 1rem 0.5rem;
+    }
+
+    .category-card .image-container {
+        height: 160px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .category-card .image-container img {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
+    .try-btn,
+    .remove-btn {
+        margin: 0.5rem auto;
+        display: block;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        border: none;
+        border-radius: 20px;
+        cursor: pointer;
+        width: 80%;
+        transition: background-color 0.2s ease;
+    }
+
+    .try-btn {
+        background-color: #0071dc;
+        color: white;
+    }
+
+    .try-btn:hover {
+        background-color: #005bb5;
+    }
+
+    .remove-btn {
+        background-color: #ff4d4f;
+        color: white;
+    }
+
+    .remove-btn:hover {
+        background-color: #d9363e;
+    }
+
+    .upload-photo button.search-button {
+        border-radius: 999px;
+        padding: 0.6rem 2rem;
+        background-color: #ffc220;
+        color: #333;
+        font-weight: bold;
+        border: none;
+        margin-top: 0.5rem;
+    }
+
+    .thumbnail-photo {
+        margin-top: 1rem;
+    }
+
+    .thumbnail-photo img {
+        width: 200px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+    }
+
+    .right-panel {
+        background-color: white;
+        padding: 1.5rem;
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        text-align: center;
+        min-height: 640px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .right-panel h3 {
+    margin-bottom: 0.75rem; /* Reduce space below heading */
+    font-size: 1.2rem;
+    }
+
+    .right-panel img {
+        max-height: 480px;
+        object-fit: contain;
+        width: auto;
+        margin-top: 0.5rem;  /* Minimize top spacing */
+        margin-bottom: 0;
+        border-radius: 10px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+</style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="location-picker">
+                <i class="fa-solid fa-location-dot"></i>
+                <div>
+                    <span class="pickup-text">Pickup or delivery?</span>
+                    <span class="location-text">Sacramento, 95829 • Sacramento Supe...</span>
+                </div>
+            </div>
+            <div class="search-container">
+                <input type="text" placeholder="Search everything at Walmart online and in store">
+                <button class="search-button"><i class="fa-solid fa-search"></i></button>
+            </div>
+            <div class="nav-icons">
+                <div class="icon-item"><i class="fa-solid fa-repeat"></i><span>Reorder</span></div>
+                <div class="icon-item"><i class="fa-regular fa-heart"></i><span>My Items</span></div>
+                <div class="icon-item"><i class="fa-regular fa-user"></i><span>{{ request.user.username }}</span></div>
+                <a href="{% url 'wardrobe' %}" class="icon-item wardrobe">
+                    <i class="fa-solid fa-shirt"></i><span>Wardrobe</span>
+                </a>
+                <div class="icon-item cart">
+                    <i class="fa-solid fa-cart-shopping"></i><span>$0.00</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        <!-- LEFT PANEL -->
+        <div class="wardrobe-left">
+            <div>
+                <div class="section-title">Your Wardrobe</div>
+                <div class="wardrobe-grid">
+                    {% for item in wardrobe_items %}
+                    <div class="category-card">
+                        <div class="image-container">
+                            <img src="{{ item.category.image.url }}" alt="{{ item.category.name }}">
+                        </div>
+                        <p>{{ item.category.name }}</p>
+                        <form method="POST" action="{% url 'try_on' item.category.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="try-btn"><i class="fa-solid fa-person-dress"></i> Try On</button>
+                        </form>
+                        <form method="POST" action="{% url 'remove_from_wardrobe' item.category.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="remove-btn"><i class="fa-solid fa-trash"></i> Remove</button>
+                        </form>
+                    </div>
+                    {% empty %}
+                        <p>No items in your wardrobe yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Upload Form + Small Full Body Thumbnail
+            <div class="upload-photo">
+                <h3>Upload Full Body Photo</h3>
+                <form method="POST" action="{% url 'wardrobe' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.full_body_image.label_tag }}
+                    {{ form.full_body_image }}
+                    <button type="submit" class="search-button">Upload Photo</button>
+                </form>
+            </div> -->
+        </div>
+
+        <!-- RIGHT PANEL (Large preview or Try-On result) -->
+        <div class="right-panel">
+            {% if result_url %}
+                <h3>Try-On Result: "{{ tried_on }}"</h3>
+                <img src="{{ result_url }}?t={{ timestamp|default:0 }}" alt="Try-On Result">
+            {% elif request.user.profile.full_body_image %}
+                <h3>Your Uploaded Full Body Photo</h3>
+                <img src="{{ request.user.profile.full_body_image.url }}" alt="Uploaded Photo">
+            {% else %}
+                <h3>Try-On Result</h3>
+                <p>No photo uploaded yet.</p>
+            {% endif %}
+
+            <!-- Upload Form Always Below -->
+            <div class="upload-photo" style="margin-top: 2rem;">
+                <h4>Upload Full Body Photo</h4>
+                <form method="POST" action="{% url 'wardrobe' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="file-input-wrapper">
+                        <input type="file" name="{{ form.full_body_image.name }}" id="{{ form.full_body_image.id_for_label }}">
+
+                        <button type="submit" class="search-button">Upload Photo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

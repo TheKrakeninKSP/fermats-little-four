@@ -40,6 +40,10 @@
                     <i class="fa-regular fa-user"></i>
                     <span>Sign In & Account</span>
                 </div>
+                <a href="{% url 'wardrobe' %}" class="icon-item wardrobe">
+                    <i class="fa-solid fa-shirt"></i>
+                    <span>Wardrobe</span>
+                </a>
                 <div class="icon-item cart">
                     <i class="fa-solid fa-cart-shopping"></i>
                     <span>$0.00</span>
@@ -55,14 +59,16 @@
         </div>
         <div class="category-grid">
             {% for category in categories %}
-            <div class="category-card">
-                <a href="#">
-                    <div class="image-container">
-                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                {% if category.slug %}
+                    <div class="category-card">
+                        <a href="{% url 'category_detail' category.slug %}">
+                            <div class="image-container">
+                                <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                            </div>
+                            <p>{{ category.name }}</p>
+                        </a>
                     </div>
-                    <p>{{ category.name }}</p>
-                </a>
-            </div>
+                {% endif %}
             {% endfor %}
         </div>
     </main>

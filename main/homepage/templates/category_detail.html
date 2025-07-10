@@ -1,0 +1,127 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walmart Clone | {{ page_title }}</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <div class="location-picker">
+                <i class="fa-solid fa-location-dot"></i>
+                <div>
+                    <span class="pickup-text">Pickup or delivery?</span>
+                    <span class="location-text">Sacramento, 95829 • Sacramento Supe...</span>
+                </div>
+            </div>
+            <div class="search-container">
+                <input type="text" placeholder="Search everything at Walmart online and in store">
+                <button class="search-button"><i class="fa-solid fa-search"></i></button>
+            </div>
+            <div class="nav-icons">
+                <div class="icon-item">
+                    <i class="fa-solid fa-repeat"></i>
+                    <span>Reorder</span>
+                </div>
+                <div class="icon-item">
+                    <i class="fa-regular fa-heart"></i>
+                    <span>My Items</span>
+                </div>
+                <div class="icon-item">
+                    <i class="fa-regular fa-user"></i>
+                    <span>Sign In & Account</span>
+                </div>
+                <a href="{% url 'wardrobe' %}" class="icon-item wardrobe">
+                    <i class="fa-solid fa-shirt"></i>
+                    <span>Wardrobe</span>
+                </a>
+                <div class="icon-item cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span>$0.00</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="product-page-header">
+            <h1>{{ page_title }}</h1>
+            <span class="item-details">Uses item details. Price when purchased online <i class="fa-solid fa-circle-info"></i></span>
+        </div>
+
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card">
+                <div class="product-header">
+                    <button class="favorite-button"><i class="fa-regular fa-heart"></i></button>
+                </div>
+                <a href="#" class="product-link">
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                    <div class="product-info">
+                        {% if product.options_price %}
+                        <div class="product-price price-range">Now $<span class="current-price">{{ product.price }}</span> <span class="old-price">${{ product.options_price }}</span></div>
+                        <div class="product-options">Options from ${{ product.options_price }}</div>
+                        {% else %}
+                        <div class="product-price">${{ product.price }}</div>
+                        {% endif %}
+
+                        <div class="product-brand">{{ product.brand }}</div>
+                        <div class="product-name">{{ product.name }}</div>
+
+                        {% if product.rating and product.num_reviews > 0 %}
+                        <div class="product-rating">
+                            {% for i in "12345"|make_list %}
+                                {% if forloop.counter <= product.rating %}
+                                <i class="fa-solid fa-star filled"></i>
+                                {% elif forloop.counter0 < product.rating %} {# Handle half stars #}
+                                <i class="fa-solid fa-star-half-stroke filled"></i>
+                                {% else %}
+                                <i class="fa-regular fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="review-count">({{ product.num_reviews }})</span>
+                        </div>
+                        {% endif %}
+
+                        {% if product.has_w_plus_shipping %}
+                        <div class="shipping-info">
+                            <span class="wplus-icon">Save with W+</span>
+                            <i class="fa-solid fa-circle-check wplus-check"></i>
+                        </div>
+                        {% endif %}
+                        {% if product.shipping_days %}
+                        <div class="shipping-delivery-time">Shipping, arrives in {{ product.shipping_days }} days</div>
+                        {% endif %}
+
+                        {% if product.pk == 4 %} {# Assuming product with ID 4 is the cargo shorts with color options #}
+                        <div class="color-options">
+                            <span class="color-dot black active"></span>
+                            <span class="color-dot grey"></span>
+                            <span class="color-dot navy"></span>
+                            <span class="color-dot brown"></span>
+                            <span class="color-dot green"></span>
+                            <span class="color-dot plus-option">+</span>
+                        </div>
+                        {% endif %}
+
+                        {% if user.is_authenticated %}
+                            <form method="POST" action="{% url 'add_to_wardrobe' category.id %}">
+                                {% csrf_token %}
+                                <button type="submit"><i class="fa-solid fa-plus"></i> Add to Wardrobe</button>
+                            </form>
+                        {% else %}
+                            <p><a href="{% url 'login' %}?next={{ request.path }}">Login to add</a></p>
+                        {% endif %}
+                    
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>
