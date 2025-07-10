@@ -66,7 +66,8 @@ def suggest_pairs(image_path):
     base_name = os.path.splitext(os.path.basename(image_path))[0]
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     for idx, item in enumerate(pair_items):
-        full_prompt = f"Image of a {item} that complements a {clothing_type} in the style of a ecommerce website product photo. No faces visible."
+        #full_prompt = f"Image of a {item} that complements a {clothing_type} in the style of a ecommerce website product photo. No faces visible."
+        full_prompt = f"A high-resolution product photo of a {item}, isolated on a plain white background, studio lighting, no mannequin, no model, no face, professional catalog image"
         OUTPUT_DIR = os.path.join(OUTPUT_BASE_DIR, clothing_type)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         OUTPUT_DIR = os.path.join(OUTPUT_DIR, f"{timestamp}")
