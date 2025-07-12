@@ -8,7 +8,7 @@ import openai
 import requests
 from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
-
+from django.conf import settings
 
 # ==== Setup ====
 API_KEY = """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"""
@@ -16,7 +16,7 @@ API_KEY = """sk-proj-hxyNBbnVyRcIWcVEq7A__FkY-OqcKBVKUkylNn3nKu_rMTCTqubZ4KgPXZi
 client = openai.OpenAI(api_key=API_KEY)
 
 # Create output dir
-OUTPUT_BASE_DIR = "paired_outfits"
+OUTPUT_BASE_DIR = os.path.join(settings.MEDIA_ROOT, "paired_outfits")
 os.makedirs(OUTPUT_BASE_DIR, exist_ok=True)
 
 # List of possible clothing classes
@@ -85,7 +85,7 @@ def suggest_pairs(image_path):
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         OUTPUT_DIR = os.path.join(OUTPUT_DIR, f"{timestamp}")
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        output_file = os.path.join(OUTPUT_DIR, f"{item}.png")
+        output_file = os.path.join(OUTPUT_DIR, f"{item.replace(' ', '_')}.png")
         generate_dalle_image(prompt, output_file)
 
 # ====== Entry point ======
