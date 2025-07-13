@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Category, WardrobeItem, Profile
+
+from .models import Category, WardrobeItem, Profile, Product
+import os, sys, glob
 from django.contrib.auth.decorators import login_required
 from .forms import ProfileImageForm
 import requests
@@ -8,6 +10,7 @@ from io import BytesIO
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.contrib import messages
+from .ai_clothing_pairer import suggest_pairs
 
 
 def resize_image_to_512(image_path):
@@ -18,12 +21,30 @@ def resize_image_to_512(image_path):
     byte_io.seek(0)
     return byte_io
 
-
 def home(request):
-    categories = Category.objects.all()
+    categories = Category.objects.exclude(slug="uncategorized")
     context = {'categories': categories}
     return render(request, 'home.html', context)
 
+
+
+def category_detail(request, slug):
+    category = get_object_or_404(Category, slug=slug)
+    products = Product.objects.filter(category=category)
+    return render(request, 'category_detail.html', {
+        'category': category,
+        'products': products,
+        'page_title': f"{category.name} - Products"
+    })
+
+
+def resize_image_to_512(image_path):
+    img = Image.open(image_path).convert("RGB")
+    img = img.resize((512, 512))
+    byte_io = BytesIO()
+    img.save(byte_io, format='JPEG', quality=95)
+    byte_io.seek(0)
+    return byte_io
 
 @login_required
 def add_to_wardrobe(request,category_id):
@@ -123,4 +144,43 @@ def try_on(request, category_id):
         'result_url': result_url,
         'tried_on': category.name,
         'timestamp': int(time()),
+
+    })
+
+@login_required
+def ai_suggestions(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    image_path = category.image.path
+
+    # Generate AI suggestions (this will create images in paired_outfits/)
+    suggest_pairs(image_path)
+
+    # Find the latest output directory for this clothing type
+    from datetime import datetime
+    import os
+
+    # Get clothing type
+    from .ai_clothing_pairer import classify_clothing, OUTPUT_BASE_DIR
+    clothing_type = classify_clothing(image_path)
+    type_dir = os.path.join(OUTPUT_BASE_DIR, clothing_type)
+    # Find the latest timestamped folder
+    subdirs = [os.path.join(type_dir, d) for d in os.listdir(type_dir) if os.path.isdir(os.path.join(type_dir, d))]
+    latest_dir = max(subdirs, key=os.path.getmtime)
+
+    # List all generated images
+    image_files = glob.glob(os.path.join(latest_dir, "*.png"))
+    # Convert to media URLs
+    media_root = os.path.abspath(settings.MEDIA_ROOT)
+    result_urls = [
+        {
+            "url": settings.MEDIA_URL + os.path.relpath(f, media_root),
+            "name": os.path.splitext(os.path.basename(f))[0]
+        }
+        for f in image_files
+    ]
+
+    return render(request, 'ai_suggestions.html', {
+        'category': category,
+        'page_title': f"AI Suggestions for {category.name}",
+        'result_urls': result_urls,
     })

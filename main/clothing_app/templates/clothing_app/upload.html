@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clothing Style Suggestions - Walmart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bogle:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Bogle', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f7f8fa;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+        
+        .walmart-header {
+            background-color: #0071ce;
+            padding: 12px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .walmart-header h1 {
+            color: white;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .walmart-logo {
+            color: #ffc220;
+            font-size: 28px;
+            margin-right: 8px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+        
+        .upload-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .file-input {
+            padding: 12px;
+            border: 2px dashed #e6e6e6;
+            border-radius: 8px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input:hover {
+            border-color: #0071ce;
+            background: #f0f8ff;
+        }
+        
+        .walmart-btn {
+            background-color: #0071ce;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: flex-start;
+        }
+        
+        .walmart-btn:hover {
+            background-color: #005ba1;
+            transform: translateY(-1px);
+        }
+        
+        .walmart-btn:active {
+            transform: translateY(0);
+        }
+        
+        .walmart-btn.secondary {
+            background-color: #ffc220;
+            color: #1a1a1a;
+        }
+        
+        .walmart-btn.secondary:hover {
+            background-color: #e6ad00;
+        }
+        
+        .uploaded-image-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .uploaded-image {
+            max-width: 300px;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .classification-results {
+            background: #e6f3ff;
+            border: 1px solid #0071ce;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            display: none;
+        }
+        
+        .classification-results h6 {
+            color: #0071ce;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .classification-results p {
+            margin: 4px 0;
+            color: #1a1a1a;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e6e6e6;
+            border-top: 4px solid #0071ce;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .suggestions-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .suggestions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .product-card {
+            background: white;
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        .product-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            border-color: #0071ce;
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .product-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .product-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        
+        .product-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .stars {
+            color: #ffc220;
+            font-size: 14px;
+        }
+        
+        .review-count {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .product-category {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        
+        .walmart-badge {
+            background: #0071ce;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .suggestions-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 16px;
+            }
+            
+            .uploaded-image {
+                max-width: 250px;
+                max-height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="walmart-header">
+        <h1><span class="walmart-logo">★</span>Walmart Style Suggestions</h1>
+    </div>
+    
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2 class="section-title">Upload Your Clothing Item</h2>
+            <form method="post" enctype="multipart/form-data" class="upload-form">
+                {% csrf_token %}
+                <div class="file-input">
+                    {{ form.image }}
+                </div>
+                <button type="submit" class="walmart-btn">Upload Image</button>
+            </form>
+        </div>
+        
+        <!-- Uploaded Image Display -->
+        {% if upload %}
+        <div class="uploaded-image-section">
+            <h2 class="section-title">Your Uploaded Item</h2>
+            <img src="{{ upload.image.url }}" alt="Uploaded clothing" class="uploaded-image">
+            
+            {% if show_classify_button %}
+            <br>
+            <button id="getSuggestionsBtn" class="walmart-btn secondary">Get Style Suggestions</button>
+            {% endif %}
+            
+            <!-- Loading indicator -->
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Finding the perfect matches for your style...</p>
+            </div>
+            
+            <!-- Classification Results -->
+            <div id="classificationResults" class="classification-results">
+                <h6>Item Analysis:</h6>
+                <p><strong>Type:</strong> <span id="classifiedType"></span></p>
+                <p><strong>Color:</strong> <span id="classifiedColor"></span></p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Suggestions Display -->
+        <div class="suggestions-section" id="suggestionsContainer">
+            <h2 class="section-title">Perfect Matches from Walmart</h2>
+            <div class="suggestions-grid" id="suggestionsGrid">
+                <!-- Suggestions will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('getSuggestionsBtn')?.addEventListener('click', function() {
+            const button = this;
+            const loading = document.getElementById('loading');
+            const classificationResults = document.getElementById('classificationResults');
+            const suggestionsContainer = document.getElementById('suggestionsContainer');
+            
+            // Show loading, hide button
+            button.style.display = 'none';
+            loading.style.display = 'block';
+            
+            // Make API request
+            fetch('/clothing/get-suggestions/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    button.style.display = 'block';
+                    return;
+                }
+                
+                // Show classification results
+                document.getElementById('classifiedType').textContent = data.classified_type;
+                document.getElementById('classifiedColor').textContent = data.classified_color;
+                classificationResults.style.display = 'block';
+                
+                // Show suggestions
+                displaySuggestions(data.suggestions);
+                suggestionsContainer.style.display = 'block';
+                
+                // Scroll to suggestions
+                suggestionsContainer.scrollIntoView({ behavior: 'smooth' });
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                button.style.display = 'block';
+                alert('Error: ' + error.message);
+            });
+        });
+        
+        function displaySuggestions(suggestions) {
+            const grid = document.getElementById('suggestionsGrid');
+            grid.innerHTML = '';
+            
+            suggestions.forEach(item => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.onclick = () => window.open(item.productUrl, '_blank');
+                
+                const stars = '★'.repeat(Math.floor(item.rating)) + '☆'.repeat(5 - Math.floor(item.rating));
+                const price = item.salePrice ? `${item.salePrice.toFixed(2)}` : 'Check Price';
+                
+                productCard.innerHTML = `
+                    <img src="${item.thumbnailImage}" alt="${item.name}" class="product-image" onerror="this.src='https://i5.walmartimages.com/dfw/4ff9c6c9-52/k2-_15938eb7-8e42-4f7a-b8d7-c1d6e1b5a0d5.v1.jpg'">
+                    <div class="product-name">${item.name}</div>
+                    <div class="product-price">${price}</div>
+                    ${item.rating > 0 ? `
+                        <div class="product-rating">
+                            <span class="stars">${stars}</span>
+                            <span class="review-count">(${item.reviewCount} reviews)</span>
+                        </div>
+                    ` : ''}
+                    <div class="product-category">${item.categoryPath}</div>
+                    <div class="walmart-badge">Available at Walmart</div>
+                `;
+                
+                grid.appendChild(productCard);
+            });
+        }
+    </script>
+</body>
+</html>
