@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Category
-from .models import Product, Profile, WardrobeItem
+
+from .models import Category, WardrobeItem, Profile, Product
 import os, sys, glob
 from django.contrib.auth.decorators import login_required
 from .forms import ProfileImageForm
@@ -10,13 +10,22 @@ from io import BytesIO
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.contrib import messages
-
 from .ai_clothing_pairer import suggest_pairs
+
+
+def resize_image_to_512(image_path):
+    img = Image.open(image_path).convert("RGB")
+    img = img.resize((512, 512))
+    byte_io = BytesIO()
+    img.save(byte_io, format='JPEG', quality=95)
+    byte_io.seek(0)
+    return byte_io
 
 def home(request):
     categories = Category.objects.exclude(slug="uncategorized")
     context = {'categories': categories}
     return render(request, 'home.html', context)
+
 
 
 def category_detail(request, slug):
@@ -36,7 +45,6 @@ def resize_image_to_512(image_path):
     img.save(byte_io, format='JPEG', quality=95)
     byte_io.seek(0)
     return byte_io
-
 
 @login_required
 def add_to_wardrobe(request,category_id):
@@ -136,6 +144,7 @@ def try_on(request, category_id):
         'result_url': result_url,
         'tried_on': category.name,
         'timestamp': int(time()),
+
     })
 
 @login_required

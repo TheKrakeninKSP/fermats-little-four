@@ -1,4 +1,5 @@
 from django.db import models
+
 from django.utils.text import slugify
 from django.contrib.auth.models import User
 
@@ -38,6 +39,7 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
+        verbose_name_plural = "Products"
 
 
 class Product(models.Model):
@@ -56,5 +58,3 @@ class Product(models.Model):
         return self.name
 
     class Meta:
-        verbose_name_plural = "Products"
-

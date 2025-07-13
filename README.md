@@ -1,25 +1,120 @@
-# fermats-little-four
+### 1. Install Dependencies
 
-- before you start coding, setup the environment correctly.
-- create your own branch
-- git clone the branch onto your pc: git clone https://github.com/TheKrakeninKSP/fermats-little-four.git -b [your-branch-name] --single-branch [folder-name-to-clone-into]
-- ensure you are on the correct branch using 'git branch' command
-- commit with meaningful messages, and push with 'git push'. no need to specify branch, it will automatically push to your branch.
-- make pull requests from github.com when you are ready to merge with the main branch.
+```bash
+pip install pillow requests
+```
 
-# code editor setup
-- for python code, please install the black-formatter, pylint and isort in your VSCode editor. This will ensure readability and help avoid bugs.
-- in the directory, create a venv, and use python 3.12.3 for compatibility, use the requirements.txt file to ensure all dependencies are installed.
-- if you forget to use requirements.txt during venv creation, then just do pip install -r requirements.txt
-- activate the venv environment, and install pipreqs.
-- run the build.py file periodically, as this will update the requirements.txt file
-- please ensure you do all the pip installs after you activate the venv environment
 
-# use the .gitignore file to keep the codebase clean
-- please use the .gitignore file, dont push any videos/large files to git
-- if you must keep some images in the codebase, please ensure you only keep the minimal amount
-- have a separate 'data' folder for images, data, and videos and other stuff
-- push only the code files and configs to git
+> Django will auto-create subfolders like `tryon_results/` and `user_bodies/`, but the root `media/` folder must exist.
 
-this setup process will take a while, but please ensure you do it correctly. 
-this will help us debug properly, and will avoid a million headaches later on.
+---
+
+## ⚙️ Django Setup
+
+### 2. Apply Migrations
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### 3. Create Admin User
+
+```bash
+python manage.py createsuperuser
+```
+
+### 4. Run the Server
+
+```bash
+python manage.py runserver
+```
+
+Visit [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+---
+
+## 🔐 Admin Workflow
+
+1. Go to: [http://127.0.0.1:8000/admin](http://127.0.0.1:8000/admin)
+2. Login with superuser credentials.
+3. Add `Category` objects (name + image of clothing).
+4. You can optionally create test users or view profiles.
+
+---
+
+## 👤 User Flow
+
+### Step-by-step Instructions
+
+1. Go to: [http://127.0.0.1:8000/login](http://127.0.0.1:8000/login)
+2. Log in with an admin-created user.
+3. Browse clothing items on the homepage.
+4. Click **"Add to Wardrobe"** on any item.
+5. Click the **shirt icon (Wardrobe)** in the header to open wardrobe.
+6. In the wardrobe:
+   - Upload your **full-body image**
+   - Click **"Try On"** next to any item to generate a preview
+   - Click **"Remove"** to delete clothing from wardrobe
+
+---
+
+## 📸 Image Handling
+
+- Avatar and try-on result images are saved in `media/`:
+  ```
+  media/
+  ├── user_bodies/
+  └── tryon_results/
+  ```
+
+- New avatar uploads replace old ones.
+- New try-on results overwrite older result for that user.
+- URLs are cache-busted to prevent old images from appearing.
+
+---
+
+## 🌐 API Integration
+
+Try-On API is called via RapidAPI:
+
+### Configuration
+
+In `views.py`, set your API credentials:
+
+```python
+headers = {
+    "x-rapidapi-key": "your_api_key_here",
+    "x-rapidapi-host": "try-on-diffusion.p.rapidapi.com"
+}
+```
+
+---
+
+
+## 🚫 Troubleshooting
+
+- **Old image still appears after upload?**  
+  → The app uses timestamp-based cache busting. Confirm your template includes:
+  ```html
+  <img src="{{ result_url }}?t={{ timestamp }}">
+  ```
+
+- **Media files not saving?**  
+  → Ensure `media/` folder exists and is writable.
+
+- **404 on `/accounts/profile/`?**  
+  → Add `LOGIN_REDIRECT_URL = '/'` in `settings.py`.
+
+---
+
+## ✅ To-Do / Enhancements
+
+-UI Improvement right now only basic HTML
+-redirect the sign in account to /login
+---
+
+
+## 🙋‍♂️ Maintainer
+
+**Aditya Pillai**

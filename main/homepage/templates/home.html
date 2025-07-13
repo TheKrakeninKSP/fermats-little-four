@@ -38,7 +38,7 @@
                 </div>
                 <div class="icon-item">
                     <i class="fa-regular fa-user"></i>
-                    <span>Sign In & Account</span>
+                    <span>abishek</span>
                 </div>
                 <a href="{% url 'wardrobe' %}" class="icon-item wardrobe">
                     <i class="fa-solid fa-shirt"></i>
@@ -59,6 +59,30 @@
         </div>
         <div class="category-grid">
             {% for category in categories %}
+            <div class="category-card">
+                <div class="image-container">
+                    <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                </div>
+                <p>{{ category.name }}</p>
+                {% if user.is_authenticated %}
+                    <form method="POST" action="{% url 'add_to_wardrobe' category.id %}">
+                        {% csrf_token %}
+                        <button type="submit"><i class="fa-solid fa-plus"></i> Add to Wardrobe</button>
+                    </form>
+                {% else %}
+                    <p><a href="{% url 'login' %}?next={{ request.path }}">Login to add</a></p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- <div class="category-grid">
+            {% for category in categories %}
+            <div class="category-card">
+                <a href="#">
+                    <div class="image-container">
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
+
                 {% if category.slug %}
                     <div class="category-card">
                         <a href="{% url 'category_detail' category.slug %}">
@@ -67,10 +91,11 @@
                             </div>
                             <p>{{ category.name }}</p>
                         </a>
+
                     </div>
                 {% endif %}
             {% endfor %}
-        </div>
+        </div> -->
     </main>
 </body>
 </html>

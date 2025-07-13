@@ -164,6 +164,7 @@ main {
     font-weight: 500;
 }
 
+
 main {
     padding: 2rem;
     max-width: 1200px;
@@ -463,7 +464,6 @@ main {
         font-size: 1.3rem;
     }
 }
-
 
 .try-btn,
 .remove-btn {
