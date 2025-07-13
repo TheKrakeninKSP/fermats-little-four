@@ -9,6 +9,7 @@ import time
 import json
 from urllib.parse import quote
 import random
+import re
 
 class ClothingClassifier:
     def __init__(self):
@@ -405,57 +406,52 @@ def extract_from_redux_state(redux_data, search_query):
     return None
 
 def get_google_image(search_query):
-    """Get first image from Google Images search"""
+    """Get first image URL from Google Images search (Unofficial, may break if Google layout changes)"""
     
+    search_url = "https://www.google.com/search"
+    params = {
+        'q': search_query,
+        'tbm': 'isch',
+        'tbs': 'isz:m'  # Medium size images
+    }
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'DNT': '1',
+        'Connection': 'keep-alive'
+    }
+
     try:
-        # Use Google Images search
-        search_url = "https://www.google.com/search"
-        params = {
-            'q': f"{search_query} clothing",
-            'tbm': 'isch',
-            'tbs': 'isz:m'  # Medium size images
-        }
-        
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'DNT': '1',
-            'Connection': 'keep-alive'
-        }
-        
-        time.sleep(0.5)  # Be respectful
         response = requests.get(search_url, params=params, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            html_content = response.text
-            
-            # Look for image URLs in the HTML
-            # Google Images uses various patterns, try multiple
-            patterns = [
-                r'"ou":"([^"]+)"',  # Original URL
-                r'data-src="([^"]+)"',  # Data source
-                r'src="([^"]+)".*?class="[^"]*image[^"]*"',  # Image with class
-                r'https://[^"]*\.(?:jpg|jpeg|png|webp)[^"]*'  # Direct image URLs
-            ]
-            
-            for pattern in patterns:
-                matches = re.findall(pattern, html_content)
-                for match in matches:
-                    # Filter out unwanted URLs
-                    if (match.startswith('http') and 
-                        any(ext in match.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']) and
-                        'google' not in match.lower() and
-                        'logo' not in match.lower() and
-                        len(match) > 50):  # Reasonable URL length
-                        print(f"Found Google image: {match[:100]}...")
-                        return match
-                        
+        response.raise_for_status()
+        html = response.text
+
+        patterns = [
+            r'"ou":"([^"]+)"',  # Most common image pattern (original image)
+            r'"imgurl":"([^"]+)"',  # Alternate format
+            r'data-src="([^"]+)"',
+            r'src="([^"]+)".*?class="[^"]*image[^"]*"',
+            r'https://[^"]*\.(?:jpg|jpeg|png|webp)[^"]*'
+        ]
+
+        for pattern in patterns:
+            matches = re.findall(pattern, html)
+            for match in matches:
+                if (match.startswith('http') and
+                    any(match.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp']) and
+                    'google' not in match.lower() and
+                    'logo' not in match.lower() and
+                    len(match) > 50):
+                    print(f"Found Google image: {match[:100]}...")
+                    return match
+
     except Exception as e:
         print(f"Google Images search failed: {e}")
-    
-    # Fallback to Walmart placeholder
+
+    # Fallback
+    print("Failed to get Google image, using placeholder")
     return "https://i5.walmartimages.com/dfw/4ff9c6c9-52/k2-_15938eb7-8e42-4f7a-b8d7-c1d6e1b5a0d5.v1.jpg"
 
 def create_enhanced_fallback(color, item_type, search_query):
