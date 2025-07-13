@@ -5,7 +5,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('', views.home, name='home'),
-
+    path('', views.ClothingUploadView.as_view(), name='upload'),
+    path('<int:category_id>/', views.ClothingUploadView.as_view(), name='upload'),
+    path('get-suggestions/', views.GetSuggestionsView.as_view(), name='get_suggestions'),   
     path('category/<slug:slug>/', views.category_detail, name='category_detail'),
     path('add-to-wardrobe/<int:category_id>/', views.add_to_wardrobe, name='add_to_wardrobe'),
     path('wardrobe/',views.wardrobe, name='wardrobe'),

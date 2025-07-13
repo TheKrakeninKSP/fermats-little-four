@@ -2,18 +2,24 @@ import glob
 import os
 import sys
 from io import BytesIO
-
+import json
 import requests
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.views.generic import View
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404, redirect, render
 from PIL import Image
-
+from django.utils.decorators import method_decorator
 from .ai_clothing_pairer import suggest_pairs
 from .forms import ProfileImageForm
 from .models import Category, Product, Profile, WardrobeItem
+from .models import ClothingUpload
+from .forms import ClothingUploadForm
+from .services import ClothingClassifier, WalmartAPIService
 
 
 def resize_image_to_512(image_path):
@@ -208,3 +214,64 @@ def ai_suggestions(request, category_id):
             "result_urls": result_urls,
         },
     )
+
+
+
+class ClothingUploadView(View):
+    def get(self, request, category_id=None):
+        form = ClothingUploadForm()
+        return render(request, 'upload.html', {'form': form})
+    
+    def post(self, request, category_id=None):
+        form = ClothingUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            upload = form.save()
+            
+            # Store upload ID in session for later use
+            request.session['current_upload_id'] = upload.id
+            
+            return render(request, 'upload.html', {
+                'form': ClothingUploadForm(),
+                'upload': upload,
+                'show_classify_button': True,
+                'upload_id': upload.id 
+            })
+        
+        return render(request, 'upload.html', {'form': form})
+
+@method_decorator(csrf_exempt, name='dispatch')
+class GetSuggestionsView(View):
+    def post(self, request):
+        data = json.loads(request.body)
+        upload_id = data.get('upload_id')
+        if not upload_id:
+            return JsonResponse({'error': 'No upload found'}, status=400)
+        
+        try:
+            upload = ClothingUpload.objects.get(id=upload_id)
+            
+            # Initialize services
+            classifier = ClothingClassifier()
+            walmart_service = WalmartAPIService()
+            
+            # Classify the clothing
+            clothing_type, clothing_color = classifier.classify_clothing(upload.image.path)
+            
+            # Update the upload with classification results
+            upload.classified_type = clothing_type
+            upload.classified_color = clothing_color
+            upload.save()
+            
+            # Get complementary items
+            suggestions = walmart_service.get_complementary_items(clothing_type, clothing_color)
+            
+            return JsonResponse({
+                'classified_type': clothing_type,
+                'classified_color': clothing_color,
+                'suggestions': suggestions
+            })
+            
+        except ClothingUpload.DoesNotExist:
+            return JsonResponse({'error': 'Upload not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

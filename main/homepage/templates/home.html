@@ -57,7 +57,7 @@
             <h2>Shop by category</h2>
             <a href="#">Save sets</a>
         </div>
-        <div class="category-grid">
+        <!-- <div class="category-grid">
             {% for category in categories %}
             <div class="category-card">
                 <div class="image-container">
@@ -74,14 +74,10 @@
                 {% endif %}
             </div>
             {% endfor %}
-        </div>
+        </div> -->
 
-        <!-- <div class="category-grid">
+        <div class="category-grid">
             {% for category in categories %}
-            <div class="category-card">
-                <a href="#">
-                    <div class="image-container">
-                        <img src="{{ category.image.url }}" alt="{{ category.name }}">
 
                 {% if category.slug %}
                     <div class="category-card">
@@ -95,7 +91,7 @@
                     </div>
                 {% endif %}
             {% endfor %}
-        </div> -->
+        </div>
     </main>
 </body>
 </html>
