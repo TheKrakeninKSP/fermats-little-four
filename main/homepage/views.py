@@ -1,105 +1,116 @@
-from django.shortcuts import render, get_object_or_404, redirect
-
-from .models import Category, WardrobeItem, Profile, Product
-import os, sys, glob
-from django.contrib.auth.decorators import login_required
-from .forms import ProfileImageForm
-import requests
-from PIL import Image
+import glob
+import os
+import sys
 from io import BytesIO
+
+import requests
 from django.conf import settings
-from django.core.files.storage import default_storage
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.files.storage import default_storage
+from django.shortcuts import get_object_or_404, redirect, render
+from PIL import Image
+
 from .ai_clothing_pairer import suggest_pairs
+from .forms import ProfileImageForm
+from .models import Category, Product, Profile, WardrobeItem
 
 
 def resize_image_to_512(image_path):
     img = Image.open(image_path).convert("RGB")
     img = img.resize((512, 512))
     byte_io = BytesIO()
-    img.save(byte_io, format='JPEG', quality=95)
+    img.save(byte_io, format="JPEG", quality=95)
     byte_io.seek(0)
     return byte_io
 
+
 def home(request):
     categories = Category.objects.exclude(slug="uncategorized")
-    context = {'categories': categories}
-    return render(request, 'home.html', context)
-
+    context = {"categories": categories}
+    return render(request, "home.html", context)
 
 
 def category_detail(request, slug):
     category = get_object_or_404(Category, slug=slug)
     products = Product.objects.filter(category=category)
-    return render(request, 'category_detail.html', {
-        'category': category,
-        'products': products,
-        'page_title': f"{category.name} - Products"
-    })
+    return render(
+        request,
+        "category_detail.html",
+        {
+            "category": category,
+            "products": products,
+            "page_title": f"{category.name} - Products",
+        },
+    )
 
 
 def resize_image_to_512(image_path):
     img = Image.open(image_path).convert("RGB")
     img = img.resize((512, 512))
     byte_io = BytesIO()
-    img.save(byte_io, format='JPEG', quality=95)
+    img.save(byte_io, format="JPEG", quality=95)
     byte_io.seek(0)
     return byte_io
 
+
 @login_required
-def add_to_wardrobe(request,category_id):
-    category = get_object_or_404(Category,id=category_id)
-    WardrobeItem.objects.get_or_create(user=request.user,category=category)
-    return redirect('home')
+def add_to_wardrobe(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    WardrobeItem.objects.get_or_create(user=request.user, category=category)
+    return redirect("home")
+
 
 from .forms import ProfileImageForm
 from .models import Profile
+
 
 @login_required
 def wardrobe(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ProfileImageForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-         # Store the old file
-         old_image = None
-         if profile.full_body_image:
-             old_image = profile.full_body_image.path
+            # Store the old file
+            old_image = None
+            if profile.full_body_image:
+                old_image = profile.full_body_image.path
 
-         # Save the new one
-         form.save()
+            # Save the new one
+            form.save()
 
-         # Delete the old file if a new one was uploaded
-         if 'full_body_image' in request.FILES and old_image:
-             import os
-             if os.path.exists(old_image):
-                 os.remove(old_image)
+            # Delete the old file if a new one was uploaded
+            if "full_body_image" in request.FILES and old_image:
+                import os
 
-         return redirect('wardrobe')
+                if os.path.exists(old_image):
+                    os.remove(old_image)
+
+            return redirect("wardrobe")
 
     else:
         form = ProfileImageForm(instance=profile)
 
-    items = WardrobeItem.objects.filter(user=request.user).select_related('category')
-    return render(request, 'wardrobe.html', {
-        'wardrobe_items': items,
-        'form': form
-    })
+    items = WardrobeItem.objects.filter(user=request.user).select_related("category")
+    return render(request, "wardrobe.html", {"wardrobe_items": items, "form": form})
+
+
 @login_required
 def remove_from_wardrobe(request, category_id):
     item = get_object_or_404(WardrobeItem, user=request.user, category_id=category_id)
     item.delete()
-    return redirect('wardrobe')
+    return redirect("wardrobe")
+
 
 @login_required
 def try_on(request, category_id):
-    
+
     profile = get_object_or_404(Profile, user=request.user)
     category = get_object_or_404(Category, id=category_id)
     if not profile.full_body_image:
         messages.error(request, "Please upload your full-body image first.")
-        return redirect('wardrobe')
+        return redirect("wardrobe")
 
     # Full paths
     avatar_path = default_storage.path(profile.full_body_image.name)
@@ -111,19 +122,19 @@ def try_on(request, category_id):
 
     headers = {
         "x-rapidapi-key": "91de88b5a5msh84a5edba908ba7bp14306djsnddd6c65aa846",
-        "x-rapidapi-host": "try-on-diffusion.p.rapidapi.com"
+        "x-rapidapi-host": "try-on-diffusion.p.rapidapi.com",
     }
 
     files = {
         "avatar_image": ("avatar.jpg", avatar_io, "image/jpeg"),
-        "clothing_image": ("cloth.jpg", cloth_io, "image/jpeg")
+        "clothing_image": ("cloth.jpg", cloth_io, "image/jpeg"),
     }
 
     response = requests.post(
         "https://try-on-diffusion.p.rapidapi.com/try-on-file",
         headers=headers,
         files=files,
-        data={"seed": "-1"}
+        data={"seed": "-1"},
     )
 
     if response.status_code == 200:
@@ -133,19 +144,23 @@ def try_on(request, category_id):
     else:
         result_url = None
 
-    items = WardrobeItem.objects.filter(user=request.user).select_related('category')
+    items = WardrobeItem.objects.filter(user=request.user).select_related("category")
     form = ProfileImageForm(instance=profile)
-    
-    from time import time
-    
-    return render(request, 'wardrobe.html', {
-        'wardrobe_items': items,
-        'form': form,
-        'result_url': result_url,
-        'tried_on': category.name,
-        'timestamp': int(time()),
 
-    })
+    from time import time
+
+    return render(
+        request,
+        "wardrobe.html",
+        {
+            "wardrobe_items": items,
+            "form": form,
+            "result_url": result_url,
+            "tried_on": category.name,
+            "timestamp": int(time()),
+        },
+    )
+
 
 @login_required
 def ai_suggestions(request, category_id):
@@ -156,15 +171,20 @@ def ai_suggestions(request, category_id):
     suggest_pairs(image_path)
 
     # Find the latest output directory for this clothing type
-    from datetime import datetime
     import os
+    from datetime import datetime
 
     # Get clothing type
-    from .ai_clothing_pairer import classify_clothing, OUTPUT_BASE_DIR
+    from .ai_clothing_pairer import OUTPUT_BASE_DIR, classify_clothing
+
     clothing_type = classify_clothing(image_path)
     type_dir = os.path.join(OUTPUT_BASE_DIR, clothing_type)
     # Find the latest timestamped folder
-    subdirs = [os.path.join(type_dir, d) for d in os.listdir(type_dir) if os.path.isdir(os.path.join(type_dir, d))]
+    subdirs = [
+        os.path.join(type_dir, d)
+        for d in os.listdir(type_dir)
+        if os.path.isdir(os.path.join(type_dir, d))
+    ]
     latest_dir = max(subdirs, key=os.path.getmtime)
 
     # List all generated images
@@ -174,13 +194,17 @@ def ai_suggestions(request, category_id):
     result_urls = [
         {
             "url": settings.MEDIA_URL + os.path.relpath(f, media_root),
-            "name": os.path.splitext(os.path.basename(f))[0]
+            "name": os.path.splitext(os.path.basename(f))[0],
         }
         for f in image_files
     ]
 
-    return render(request, 'ai_suggestions.html', {
-        'category': category,
-        'page_title': f"AI Suggestions for {category.name}",
-        'result_urls': result_urls,
-    })
+    return render(
+        request,
+        "ai_suggestions.html",
+        {
+            "category": category,
+            "page_title": f"AI Suggestions for {category.name}",
+            "result_urls": result_urls,
+        },
+    )
