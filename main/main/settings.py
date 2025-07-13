@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'ar_tryon',
     "homepage",
+    'clothing_app',
     'drf_spectacular',
     'drf_spectacular_sidecar',
 ]
@@ -154,3 +155,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # React dev server
     "http://127.0.0.1:3000",
 ]
+
+
+# Walmart API Configuration
+WALMART_API_KEY = 'your_walmart_api_key_here'

@@ -32,7 +32,7 @@ urlpatterns = [
   
     path('', include('homepage.urls')),
     path('api/tryon/', ar_tryon_page, name='ar-tryon-page'),
-    
+    path('clothing/', include('clothing_app.urls')),
 ]
 
 
