@@ -1,26 +1,48 @@
-import glob
 import os
 import sys
-from io import BytesIO
+import glob
 import json
+import base64
 import requests
+from io import BytesIO
+
+from PIL import Image
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.views.generic import View
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from PIL import Image
 from django.utils.decorators import method_decorator
-from .ai_clothing_pairer import suggest_pairs
-from .forms import ProfileImageForm
-from .models import Category, Product, Profile, WardrobeItem
-from .models import ClothingUpload
-from .forms import ClothingUploadForm
-from .services import ClothingClassifier, WalmartAPIService
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import View
 
+from openai import OpenAI
+
+from homepage.models import Category, Product, Profile, WardrobeItem, ClothingUpload
+from homepage.forms import ProfileImageForm, ClothingUploadForm
+from homepage.services import ClothingClassifier, WalmartAPIService
+from homepage.ai_clothing_pairer import suggest_pairs
+from time import time
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from PIL import Image
+from io import BytesIO
+import base64
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.conf import settings
+import os 
+from time import time # Add this import statement!
+
+# Assuming these imports are correct based on your project structure
+from .models import Profile, Product, WardrobeItem 
+from .forms import ProfileImageForm 
+
+client = OpenAI(api_key="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")
 
 def resize_image_to_512(image_path):
     img = Image.open(image_path).convert("RGB")
@@ -61,10 +83,10 @@ def resize_image_to_512(image_path):
 
 
 @login_required
-def add_to_wardrobe(request, category_id):
-    category = get_object_or_404(Category, id=category_id)
-    WardrobeItem.objects.get_or_create(user=request.user, category=category)
-    return redirect("home")
+def add_to_wardrobe(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    WardrobeItem.objects.get_or_create(user=request.user, product=product)
+    return redirect("home")  
 
 
 from .forms import ProfileImageForm
@@ -98,7 +120,8 @@ def wardrobe(request):
     else:
         form = ProfileImageForm(instance=profile)
 
-    items = WardrobeItem.objects.filter(user=request.user).select_related("category")
+    items = WardrobeItem.objects.filter(user=request.user).select_related("product", "product__category")
+
     return render(request, "wardrobe.html", {"wardrobe_items": items, "form": form})
 
 
@@ -108,8 +131,171 @@ def remove_from_wardrobe(request, category_id):
     item.delete()
     return redirect("wardrobe")
 
+"""@login_required
+def try_on(request, product_id):
+    profile = get_object_or_404(Profile, user=request.user)
+    product = get_object_or_404(Product, id=product_id)
+
+    if not profile.full_body_image:
+        messages.error(request, "Please upload your full-body image first.")
+        return redirect("wardrobe")
+
+    # Get file paths
+    avatar_path = profile.full_body_image.path
+    cloth_path = product.image.path
+
+    # Load images and concatenate vertically
+    avatar = Image.open(avatar_path).convert("RGBA")
+    cloth = Image.open(cloth_path).convert("RGBA")
+    
+    # Resize cloth to match avatar width
+    cloth = cloth.resize((avatar.width, int(cloth.height * (avatar.width / cloth.width))))
+    
+    # Concatenate
+    combined_height = avatar.height + cloth.height
+    concat_img = Image.new("RGBA", (avatar.width, combined_height), (255, 255, 255, 0))
+    concat_img.paste(avatar, (0, 0))
+    concat_img.paste(cloth, (0, avatar.height))
+
+    # Save temporarily
+    concat_io = BytesIO()
+    concat_img.save(concat_io, format="PNG")
+    concat_io.seek(0)
+
+    # Send to OpenAI GPT-image-1
+    prompt = 
+    response = client.images.edit(
+        model="gpt-image-1",
+        image=[("concat.png", concat_io)],
+        prompt=prompt
+    )
+
+    image_base64 = response.data[0].b64_json
+    image_bytes = base64.b64decode(image_base64)
+
+    # Save the result
+    result_path = f"tryon_results/{request.user.username}_{product.id}.png"
+    saved_path = default_storage.save(result_path, ContentFile(image_bytes))
+    result_url = settings.MEDIA_URL + result_path
+
+    form = ProfileImageForm(instance=profile)
+    items = WardrobeItem.objects.filter(user=request.user).select_related("product")
+
+    from time import time
+    return render(
+        request,
+        "wardrobe.html",
+        {
+            "wardrobe_items": items,
+            "form": form,
+            "result_url": result_url,
+            "tried_on": product.name,
+            "timestamp": int(time()),
+        },
+    )"""
 
 @login_required
+def try_on(request, product_id):
+    profile = get_object_or_404(Profile, user=request.user)
+    product = get_object_or_404(Product, id=product_id)
+
+    if not profile.full_body_image:
+        messages.error(request, "Please upload your full-body image first.")
+        return redirect("wardrobe")
+
+    # --- Start of Modified Logic ---
+    # Determine the base image for the try-on operation
+    # Check if a 'last_try_on_image' URL exists in the session
+    # and if the file actually exists on the filesystem.
+    last_try_on_url = request.session.get('last_try_on_url')
+    
+    if last_try_on_url:
+        # Convert MEDIA_URL relative path to an absolute file path
+        # This assumes your MEDIA_ROOT is correctly configured and accessible
+        last_try_on_path = os.path.join(settings.MEDIA_ROOT, last_try_on_url.replace(settings.MEDIA_URL, ''))
+        
+        if os.path.exists(last_try_on_path):
+            avatar_path = last_try_on_path
+        else:
+            # Fallback to original full_body_image if the session path is invalid
+            avatar_path = profile.full_body_image.path
+            # Clear invalid session entry
+            request.session.pop('last_try_on_url', None) 
+    else:
+        avatar_path = profile.full_body_image.path
+    # --- End of Modified Logic ---
+        
+    cloth_path = product.image.path
+
+    try:
+        # Load images and concatenate vertically
+        avatar = Image.open(avatar_path).convert("RGBA")
+        cloth = Image.open(cloth_path).convert("RGBA")
+        
+        # Resize cloth to match avatar width (maintain aspect ratio)
+        cloth = cloth.resize((avatar.width, int(cloth.height * (avatar.width / cloth.width))))
+        
+        # Concatenate
+        combined_height = avatar.height + cloth.height
+        concat_img = Image.new("RGBA", (avatar.width, combined_height), (255, 255, 255, 0))
+        concat_img.paste(avatar, (0, 0))
+        concat_img.paste(cloth, (0, avatar.height))
+
+        # Save temporarily to BytesIO
+        concat_io = BytesIO()
+        concat_img.save(concat_io, format="PNG")
+        concat_io.seek(0)
+
+        # Send to OpenAI GPT-image-1 with an updated, more generic prompt
+        prompt = f"""
+        In this image, there are two elements vertically arranged: a human and a piece of clothing (specifically a {product.name}).
+        Please generate a realistic image where the human is wearing the {product.name}.
+        The human should retain any clothing already present in the upper part of the first image and wear the new item on top or in addition to existing attire if appropriate for the item type.
+        """
+        response = client.images.edit(
+            model="gpt-image-1",
+            image=[("concat.png", concat_io)],
+            prompt=prompt,
+            n=1, 
+            size="1024x1024" 
+        )
+
+        image_base64 = response.data[0].b64_json
+        image_bytes = base64.b64decode(image_base64)
+
+        # Save the result image with a unique filename to avoid conflicts.
+        # We'll use a generic name for demonstration, not user/product specific.
+        result_filename = f"last_tryon_result_{int(time())}.png" 
+        result_path = f"tryon_results/{result_filename}"
+        saved_path_name = default_storage.save(result_path, ContentFile(image_bytes))
+        result_url = settings.MEDIA_URL + saved_path_name
+
+        # --- Start of Modified Logic ---
+        # Store the URL of the newly generated image in the session
+        request.session['last_try_on_url'] = result_url
+        # --- End of Modified Logic ---
+
+    except Exception as e:
+        messages.error(request, f"Error trying on the item: {e}")
+        result_url = None 
+        # Clear any previous valid try-on from session on error
+        request.session.pop('last_try_on_url', None)
+
+    form = ProfileImageForm(instance=profile)
+    items = WardrobeItem.objects.filter(user=request.user).select_related("product")
+
+    return render(
+        request,
+        "wardrobe.html",
+        {
+            "wardrobe_items": items,
+            "form": form,
+            "result_url": result_url,
+            "tried_on": product.name,
+            "timestamp": int(time()), 
+        },
+    )
+"""@login_required
 def try_on(request, category_id):
 
     profile = get_object_or_404(Profile, user=request.user)
@@ -165,8 +351,7 @@ def try_on(request, category_id):
             "tried_on": category.name,
             "timestamp": int(time()),
         },
-    )
-
+    )"""
 
 @login_required
 def ai_suggestions(request, category_id):

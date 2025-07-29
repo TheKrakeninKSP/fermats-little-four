@@ -109,9 +109,11 @@
                         {% endif %}
 
                         {% if user.is_authenticated %}
-                            <form method="POST" action="{% url 'add_to_wardrobe' category.id %}">
+                            <form method="POST" action="{% url 'add_to_wardrobe' product.id %}">
                                 {% csrf_token %}
-                                <button type="submit"><i class="fa-solid fa-plus"></i> Add to Wardrobe</button>
+                                <button type="submit">
+                                    <i class="fa-solid fa-plus"></i> Add to Wardrobe
+                                </button>
                             </form>
                         {% else %}
                             <p><a href="{% url 'login' %}?next={{ request.path }}">Login to add</a></p>
