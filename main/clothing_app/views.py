@@ -10,11 +10,11 @@ from .services import ClothingClassifier, WalmartAPIService
 import json
 
 class ClothingUploadView(View):
-    def get(self, request):
+    def get(self, request, category_id=None):
         form = ClothingUploadForm()
         return render(request, 'clothing_app/upload.html', {'form': form})
     
-    def post(self, request):
+    def post(self, request, category_id=None):
         form = ClothingUploadForm(request.POST, request.FILES)
         if form.is_valid():
             upload = form.save()

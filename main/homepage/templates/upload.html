@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,12 +18,22 @@
             background-color: #f7f8fa;
             color: #1a1a1a;
             line-height: 1.4;
+            /* Add padding-top to prevent content from hiding under the fixed header */
+            padding-top: 60px; /* Adjust this value if your header height changes */
         }
         
         .walmart-header {
             background-color: #0071ce;
             padding: 12px 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            /* --- New styles for fixed header --- */
+            position: fixed; /* Makes the header stay in place */
+            top: 0;          /* Aligns it to the very top of the viewport */
+            width: 100%;     /* Ensures it spans the full width */
+            z-index: 100;    /* Keeps it above other content */
+            /* Add a specific height to calculate body padding more accurately */
+            height: 60px; /* Approximate height of your header, adjust if needed */
+            /* --- End new styles --- */
         }
         
         .walmart-header h1 {
@@ -50,7 +61,8 @@
             border-radius: 8px;
             padding: 24px;
             margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba
+(0,0,0,0.1);
         }
         
         .section-title {
@@ -106,7 +118,24 @@
             background-color: #ffc220;
             color: #1a1a1a;
         }
-        
+        .wardrobe-btn {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background-color: #ffc220;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .wardrobe-btn:hover {
+            background-color: #e6ad00;
+            transform: translateY(-1px);
+        }
+
         .walmart-btn.secondary:hover {
             background-color: #e6ad00;
         }
@@ -264,6 +293,29 @@
             display: inline-block;
             margin-top: 8px;
         }
+
+        .toast {
+            visibility: hidden;
+            min-width: 240px;
+            background-color: #323232;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 12px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 40px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.4s ease-in-out;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
         
         @media (max-width: 768px) {
             .container {
@@ -282,13 +334,15 @@
         }
     </style>
 </head>
+
+<div id="toast" class="toast">Item added to your wardrobe!</div>
+
 <body>
     <div class="walmart-header">
         <h1><span class="walmart-logo">★</span>Walmart Style Suggestions</h1>
     </div>
     
     <div class="container">
-        <!-- Upload Section -->
         <div class="upload-section">
             <h2 class="section-title">Upload Your Clothing Item</h2>
             <form method="post" enctype="multipart/form-data" class="upload-form">
@@ -300,24 +354,25 @@
             </form>
         </div>
         
-        <!-- Uploaded Image Display -->
         {% if upload %}
         <div class="uploaded-image-section">
-            <h2 class="section-title">Your Uploaded Item</h2>
+            <h2 class="section-title">Your Item</h2>
             <img src="{{ upload.image.url }}" alt="Uploaded clothing" class="uploaded-image">
             
             {% if show_classify_button %}
             <br>
             <button id="getSuggestionsBtn" class="walmart-btn secondary">Get Style Suggestions</button>
             {% endif %}
-            
-            <!-- Loading indicator -->
+
+            {% if upload_id %}
+                <input type="hidden" id="uploadId" value="{{ upload_id }}">
+            {% endif %}
+
             <div class="loading" id="loading">
                 <div class="loading-spinner"></div>
                 <p>Finding the perfect matches for your style...</p>
             </div>
             
-            <!-- Classification Results -->
             <div id="classificationResults" class="classification-results">
                 <h6>Item Analysis:</h6>
                 <p><strong>Type:</strong> <span id="classifiedType"></span></p>
@@ -326,12 +381,10 @@
         </div>
         {% endif %}
         
-        <!-- Suggestions Display -->
         <div class="suggestions-section" id="suggestionsContainer">
             <h2 class="section-title">Perfect Matches from Walmart</h2>
             <div class="suggestions-grid" id="suggestionsGrid">
-                <!-- Suggestions will be populated here -->
-            </div>
+                </div>
         </div>
     </div>
 
@@ -347,12 +400,13 @@
             loading.style.display = 'block';
             
             // Make API request
-            fetch('/clothing/get-suggestions/', {
+            fetch('/get-suggestions/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
+                },
+                body: JSON.stringify({ upload_id: document.getElementById('uploadId').value })
             })
             .then(response => response.json())
             .then(data => {
@@ -382,21 +436,38 @@
                 alert('Error: ' + error.message);
             });
         });
-        
+
+        // ✅ Static images defined using Django's static tag (only in HTML templates!)
+        const STATIC_IMAGES = [
+            {
+                imageUrl: "{% static 'images/static1.png' %}",
+                title: "Jeans",
+                category: "Men's"
+            },
+            {
+                imageUrl: "{% static 'images/static2.png' %}",
+                title: "Hat",
+                category: "Bags & Accessories"
+            }
+        ];
+
+        // ✅ Main displaySuggestions function
         function displaySuggestions(suggestions) {
             const grid = document.getElementById('suggestionsGrid');
             grid.innerHTML = '';
-            
+
+            // Add dynamic API results
             suggestions.forEach(item => {
                 const productCard = document.createElement('div');
                 productCard.className = 'product-card';
                 productCard.onclick = () => window.open(item.productUrl, '_blank');
-                
+
                 const stars = '★'.repeat(Math.floor(item.rating)) + '☆'.repeat(5 - Math.floor(item.rating));
                 const price = item.salePrice ? `${item.salePrice.toFixed(2)}` : 'Check Price';
-                
+
                 productCard.innerHTML = `
-                    <img src="${item.thumbnailImage}" alt="${item.name}" class="product-image" onerror="this.src='https://i5.walmartimages.com/dfw/4ff9c6c9-52/k2-_15938eb7-8e42-4f7a-b8d7-c1d6e1b5a0d5.v1.jpg'">
+                    <img src="${item.thumbnailImage}" alt="${item.name}" class="product-image" 
+                        onerror="this.src='https://i5.walmartimages.com/dfw/4ff9c6c9-52/k2-_15938eb7-8e42-4f7a-b8d7-c1d6e1b5a0d5.v1.jpg'">
                     <div class="product-name">${item.name}</div>
                     <div class="product-price">${price}</div>
                     ${item.rating > 0 ? `
@@ -407,11 +478,40 @@
                     ` : ''}
                     <div class="product-category">${item.categoryPath}</div>
                     <div class="walmart-badge">Available at Walmart</div>
+                    <button class="wardrobe-btn" onclick="showToast('Item added to your wardrobe!')">Add to Wardrobe</button>
                 `;
-                
+
                 grid.appendChild(productCard);
             });
+
+            // ✅ Append static fallback images
+            STATIC_IMAGES.forEach(staticItem => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+
+                card.innerHTML = `
+                    <img src="${staticItem.imageUrl}" alt="${staticItem.title}" class="product-image">
+                    <div class="product-name">${staticItem.title}</div>
+                    <div class="product-price">Check Price</div>
+                    <div class="product-category">${staticItem.category}</div>
+                    <div class="walmart-badge">Available at Walmart</div>
+                    <button class="wardrobe-btn" onclick="showToast('Item added to your wardrobe!')">Add to Wardrobe</button>
+                `;
+
+                grid.appendChild(card);
+            });
         }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500); // disappears after 2.5 seconds
+        }
+
     </script>
 </body>
 </html>

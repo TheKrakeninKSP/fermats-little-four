@@ -4,18 +4,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Walmart Clone</title>
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <title>Walmart Style Suggestions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bogle:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        /* General Resets and Body Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Bogle', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f7f8fa;
+            color: #1a1a1a;
+            line-height: 1.4;
+            /* Padding to account for the fixed header */
+            padding-top: 70px; /* Adjust this value if your header's actual height changes */
+        }
+
+        /* --- Header Styles (Matching Walmart Look) --- */
+        header {
+            background-color: #0071ce;
+            padding: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: fixed; /* Make the header fixed */
+            top: 0;
+            width: 100%;
+            z-index: 1000; /* Ensure it stays on top */
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1300px; /* Slightly wider container for header content */
+            margin: 0 auto;
+            padding: 0 15px; /* Horizontal padding for container */
+        }
+
+        .location-picker {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .location-picker i {
+            font-size: 20px;
+            color: white;
+        }
+        .location-picker div {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+        .pickup-text {
+            font-weight: 400;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .location-text {
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap; /* Prevent wrapping */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Add ellipsis if text is too long */
+            max-width: 180px; /* Limit width */
+        }
+
+        .search-container {
+            display: flex;
+            flex-grow: 1; /* Allow search bar to take available space */
+            margin: 0 20px;
+            max-width: 600px; /* Max width for search bar */
+            height: 38px; /* Consistent height */
+            border-radius: 20px;
+            overflow: hidden; /* For input and button within */
+        }
+        .search-container input {
+            flex-grow: 1;
+            border: none;
+            padding: 8px 15px;
+            font-size: 16px;
+            outline: none;
+        }
+        .search-button {
+            background-color: #ffc220; /* Walmart yellow */
+            color: #1a1a1a;
+            border: none;
+            padding: 0 15px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+        .search-button:hover {
+            background-color: #e6ad00; /* Darker yellow on hover */
+        }
+
+        .nav-icons {
+            display: flex;
+            gap: 20px;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .icon-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            font-size: 12px;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .icon-item:hover {
+            color: #ffc220; /* Walmart yellow on hover */
+        }
+        .icon-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        .icon-item.wardrobe {
+            /* Specific style for wardrobe link if needed */
+        }
+        .icon-item.cart span {
+            font-weight: 600; /* Make cart amount bolder */
+        }
+
+        /* --- Main Content Heading --- */
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            text-align: center;
+            margin-top: 30px; /* Space below header */
+            margin-bottom: 25px; /* Space above grid */
+        }
+
+        /* --- AI Suggestions Grid & Cards --- */
+        .ai-suggestions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Responsive grid */
+            gap: 25px; /* Space between cards */
+            max-width: 1200px; /* Max width for the grid */
+            margin: 0 auto 50px auto; /* Center the grid and add bottom margin */
+            padding: 0 20px; /* Horizontal padding for smaller screens */
+        }
+
+        .ai-product-card {
+            background: white;
+            border: 1px solid #e6e6e6;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1); /* More pronounced shadow */
+            text-align: center;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            cursor: pointer; /* Indicate it's clickable */
+        }
+
+        .ai-product-card:hover {
+            transform: translateY(-5px); /* Lift on hover */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2); /* Stronger shadow on hover */
+            border-color: #0071ce; /* Highlight border on hover */
+        }
+
+        .ai-product-image {
+            width: 100%;
+            height: 250px; /* Consistent height for images */
+            object-fit: contain; /* Ensure full image is visible, scale down if too big */
+            border-radius: 8px; /* Rounded image corners */
+            margin-bottom: 15px;
+            background-color: #f0f0f0; /* Light background for images with transparency */
+        }
+
+        .ai-product-label {
+            font-size: 17px; /* Larger font size */
+            font-weight: 500; /* Medium bold */
+            color: #333; /* Darker text */
+            line-height: 1.3;
+            padding: 0 5px; /* Small horizontal padding */
+            min-height: 40px; /* Give some space for multi-line labels */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .header-container {
+                padding: 0 10px;
+            }
+            .search-container {
+                margin: 0 10px;
+            }
+            .nav-icons {
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-container {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+            }
+            .location-picker, .nav-icons {
+                order: 1; /* Adjust order for mobile layout */
+                width: 100%;
+                justify-content: center;
+            }
+            .search-container {
+                order: 2;
+                width: 95%;
+                margin: 10px 0;
+                max-width: none; /* Allow full width on smaller screens */
+            }
+            h1 {
+                font-size: 24px;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+            .ai-suggestions-grid {
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                gap: 15px;
+                padding: 0 10px;
+            }
+            .ai-product-image {
+                height: 200px;
+            }
+            .ai-product-label {
+                font-size: 15px;
+            }
+            body {
+                padding-top: 130px; /* More padding for wrapped header */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-icons {
+                flex-wrap: wrap;
+                gap: 5px 15px;
+            }
+            .icon-item {
+                font-size: 11px;
+            }
+            .icon-item i {
+                font-size: 18px;
+            }
+            body {
+                padding-top: 140px; /* Even more padding for very small screens */
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
         <div class="header-container">
-            <!--
-            <div class="logo-container">
-                <img src="https://i.imgur.com/G4l4s6K.png" alt="Walmart Logo" class="logo">
-            </div>
-            -->
             <div class="location-picker">
                 <i class="fa-solid fa-location-dot"></i>
                 <div>
@@ -52,12 +301,15 @@
         </div>
     </header>
 
-    <h1>{{ page_title }}</h1>
-    {% for img in result_urls %}
-        <div class="ai-suggestion-item" style="display:inline-block; margin:10px; text-align:center;">
-            <img src="{{ img.url }}" style="max-width:300px;">
-            <div class="img-label">{{ img.name }}</div>
-        </div>
-    {% endfor %}
+    <h1>AI Suggestions for T-shirt A</h1>
+    
+    <div class="ai-suggestions-grid">
+        {% for img in result_urls %}
+            <div class="ai-product-card">
+                <img src="{{ img.url }}" alt="{{ img.name }}" class="ai-product-image">
+                <div class="ai-product-label">{{ img.name }}</div>
+            </div>
+        {% endfor %}
+    </div>
 </body>
 </html>
